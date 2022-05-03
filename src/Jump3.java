@@ -7,6 +7,7 @@ import java.awt.*;
 import java.awt.event.*;
 import javax.swing.*;
 import java.util.Scanner;
+import java.util.ArrayList;
 //import org.jfugue.player.Player;
 public class Jump3 extends JFrame{ //starter class: makes frame and calls panel class
     JFrame frame; Scanner scan;
@@ -122,8 +123,8 @@ public class Jump3 extends JFrame{ //starter class: makes frame and calls panel 
             esnav.add(homeB3);
             esnav.add(again);
             EndScreen es = new EndScreen();
-            end.add(es);
             end.add(esnav, BorderLayout.SOUTH);
+            end.add(es);
             //main panel setup
             add(display);
         }
@@ -278,8 +279,7 @@ public class Jump3 extends JFrame{ //starter class: makes frame and calls panel 
                 homeB2.setPreferredSize(new Dimension(0, 100));
                 homeB2.setFont(new Font("Serif", Font.PLAIN, 80));
                 add(homeB2, BorderLayout.SOUTH);
-            }
-        }
+            }}
         class Help extends JPanel{
             boolean cur = true;
             public Help(){
@@ -299,8 +299,7 @@ public class Jump3 extends JFrame{ //starter class: makes frame and calls panel 
                 public void actionPerformed(ActionEvent e){
                     cur = !cur;
                     repaint();
-                }}
-        }
+                }}}
         class StoryP extends JPanel{
             public StoryP(){
                 setLayout(new BorderLayout());
@@ -346,11 +345,13 @@ public class Jump3 extends JFrame{ //starter class: makes frame and calls panel 
         //Actual game
         class Board extends JPanel implements KeyListener{
             int px, py, pxforce, pyforce, tlength;
+            double speedmultiplier;
             boolean wpress, apress, dpressed, wallowpress, onGround, loseHealth, godmode;
-            PlatMover platmove; PlayerMover pmove; TurretMover turmove;
-            Timer ptime, platime, turtime;
+            PlatMover platmove; PlayerMover pmove; TurretMover turmove; ProjectileMover projmove; ProjSpawner pspawn;
+            Timer ptime, platime, turtime, projtime, pstime;
             Image city, city2, city3, blood;
             Platform[] plats = new Platform[20]; PowerUp[] pows = new PowerUp[20]; Turret[] turr = new Turret[39];
+            ArrayList<Projectile> projectile = new ArrayList();
             Graphics2D g2;
             public Board(){
                 reset();
@@ -362,8 +363,14 @@ public class Jump3 extends JFrame{ //starter class: makes frame and calls panel 
                 ptime = new Timer(3, pmove);
                 ptime.start();
                 turmove = new TurretMover();
-                turtime = new Timer(3, turmove);
+                turtime = new Timer(5, turmove);
                 turtime.start();
+                projmove = new ProjectileMover();
+                projtime = new Timer(3, projmove);
+                projtime.start();
+                pspawn = new ProjSpawner();
+                pstime = new Timer(2000, pspawn);
+                pstime.start();
                 godmode = false;
                 tlength = 40;
                 city = new ImageIcon("src/cityback2.png").getImage();
@@ -372,6 +379,7 @@ public class Jump3 extends JFrame{ //starter class: makes frame and calls panel 
                 blood = new ImageIcon("src/blood.png").getImage();
             }
             public void reset(){
+                speedmultiplier = 0.5;
                 px = 995/2; py = 50;
                 pxforce = 0; pyforce = 0;
                 wpress = apress = dpressed = onGround = false;
@@ -407,10 +415,27 @@ public class Jump3 extends JFrame{ //starter class: makes frame and calls panel 
                         g2.setStroke(new BasicStroke(20));
                         //failure case: player is "inside" turret
                         //calculates where turret will end while still pointing to (middle of) player
-                        x3 = (int)(((px - turr[i].x + 20) * tlength) / Math.sqrt(Math.pow(px - turr[i].x + 20, 2) + Math.pow(py - turr[i].y, 2)));
-                        y3 = (int)(((py - 130 - turr[i].y + 20) * tlength) / Math.sqrt(Math.pow(px - turr[i].x + 20, 2) + Math.pow(py - 130 - turr[i].y, 2)));
+                        turr[i].x3 = x3 = (int)(((px - turr[i].x + 20) * tlength) / Math.sqrt(Math.pow(px - turr[i].x + 20, 2) + Math.pow(py - turr[i].y, 2)));
+                        turr[i].y3 = y3 = (int)(((py - 130 - turr[i].y + 20) * tlength) / Math.sqrt(Math.pow(px - turr[i].x + 20, 2) + Math.pow(py - 130 - turr[i].y, 2)));
                         g2.drawLine(turr[i].x + 20, turr[i].y + 20, turr[i].x+20+x3, turr[i].y+20+y3);
+                    }}
+                for(int i = 0; i < projectile.size(); i++) { //rendering projectiles
+                    if(projectile.get(i).type==0||projectile.get(i).type==3||projectile.get(i).type==4||projectile.get(i).type==5){
+                        g.setColor(Color.BLACK);
+                        g.fillOval(projectile.get(i).x - 20, projectile.get(i).y - 20, 40, 40);
                     }}}
+            class ProjSpawner implements ActionListener{
+                public void actionPerformed(ActionEvent e){
+                    for(int i = 0; i < 39; i++){
+                        if(turr[i].inplay){
+                            if(turr[i].type == 0) projectile.add(new Projectile(0, turr[i].x, turr[i].y, turr[i].x3, turr[i].y3));
+                            else if(turr[i].type == 1) projectile.add(new Projectile(1, turr[i].x, turr[i].y, turr[i].x3, turr[i].y3));
+                            else if(turr[i].type == 3) projectile.add(new Projectile(2, turr[i].x, turr[i].y, turr[i].x3, turr[i].y3));
+                            else {
+                                projectile.add(new Projectile(0, turr[i].x, turr[i].y, turr[i].x3, turr[i].y3/2));
+                                projectile.add(new Projectile(0, turr[i].x, turr[i].y, turr[i].x3, turr[i].y3));
+                                projectile.add(new Projectile(0, turr[i].x, turr[i].y, turr[i].x3, turr[i].y3*2));
+                            }}}}}
             class PlayerMover implements ActionListener{
                 public void actionPerformed(ActionEvent e){
                     if (pyforce >= 0) for(int i = 0; i < 20; i++) if((py < plats[i].y+6 && py > plats[i].y-6) && (px-7*1500/690 < plats[i].x+30*1500/690 && px+7*1500/690 > plats[i].x-30*1500/690)) {pyforce = 0; py = plats[i].y-6; onGround = true;}
@@ -442,9 +467,7 @@ public class Jump3 extends JFrame{ //starter class: makes frame and calls panel 
             class PlatMover implements ActionListener{
                 public void actionPerformed(ActionEvent e){
                     for(int i = 0; i < 20; i++){
-                        if(score < 50) plats[i].y++;
-                        else if(score < 150) plats[i].y+=2;
-                        else plats[i].y+=3;
+                        plats[i].y += 2*speedmultiplier;
                         if(plats[i].y > 1547) plats[i] = new Platform();
                     }
                     repaint();
@@ -452,14 +475,16 @@ public class Jump3 extends JFrame{ //starter class: makes frame and calls panel 
                 }}
             class PowerMover implements ActionListener{
                 public void actionPerformed(ActionEvent e){
-            }}
+                    for(int i = 0; i < projectile.size(); i++){
+                        projectile.get(i).x += projectile.get(i).changex*speedmultiplier;
+                        projectile.get(i).y += projectile.get(i).changey*speedmultiplier;
+                    }}}
             class TurretMover implements ActionListener{
                 public void actionPerformed(ActionEvent e){
+                    int type;
                     for(int i = 0; i < 39; i++){
                         if(turr[i].inplay){
-                            if(score < 50) turr[i].y++;
-                            else if(score < 150) turr[i].y+=2;
-                            else turr[i].y+=3;
+                            turr[i].y += 2*speedmultiplier;
                             if(turr[i].y > 1527) turr[i] = new Turret();
                             repaint();
                             grabFocus();
@@ -468,8 +493,10 @@ public class Jump3 extends JFrame{ //starter class: makes frame and calls panel 
                     }}}
             class ProjectileMover implements ActionListener{
                 public void actionPerformed(ActionEvent e){
-                    
-            }}
+                    for(int i = 0; i < projectile.size(); i++){
+                        projectile.get(i).x += projectile.get(i).changex*speedmultiplier;
+                        projectile.get(i).y += projectile.get(i).changey*speedmultiplier;
+                    }}}
             class Platform{
                 int x, y;
                 public Platform(){
@@ -487,24 +514,24 @@ public class Jump3 extends JFrame{ //starter class: makes frame and calls panel 
                 }
             }
             class Turret{
-                int x, y, type;
+                int x, y, type, shoot, x3, y3;
                 boolean inplay;
                 public Turret(){
+                    shoot = 0;
                     if((int)(Math.random()*2)==0) x = -20;
                     else x = 975;
                     y = -50;
-                    /* 0 = cannon; 1 = fireball; 2 = laser; 3 = supercannon; 4 = triple shot */
-                    type = (int)(Math.random()*5);
+                    type = 0; //(int)(Math.random()*5);
                     inplay = false;
                 }
             }
             class Projectile{
-                int type, x, y;
-                public Projectile(int tp){
-                    x = -50; y = -50;
+                int type, x, y, changex, changey;
+                public Projectile(int tp, int tx, int ty, int x3, int y3){
+                    x = tx+x3; y = ty+y3;
+                    changex = x3; changey = y3;
                     type = tp;
-                }
-                public void kill(){x = -50; y = -50;}}
+                }}
             public void coord_change(int new_x, int new_y){px = new_x;py = 1547-new_y;}
             public void keyTyped(KeyEvent e) {
                 if(e.getKeyChar() == '/'){
