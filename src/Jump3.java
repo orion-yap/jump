@@ -3,20 +3,21 @@ Orion Yap
 Stick Jump! The game
 Ik putting a lot of code on one line is bad but I wanted to save space since I have to print it out
 */
-import java.awt.*;
-import java.awt.event.*;
+import java.awt.*; import java.awt.event.*;
 import javax.swing.*;
 import java.util.Scanner;
 import java.util.ArrayList;
-//import org.jfugue.player.Player;
+import java.io.FileWriter; import java.io.PrintWriter;
+import java.io.File; import java.io.FileNotFoundException;
+import java.io.IOException; import java.util.Scanner;
+//// TODO: 5/7/2022 make home screen portal gifs, and animate character
+//// TODO: 5/7/2022 clean up code; rename (naming conventions), organize
 public class Jump3 extends JFrame{ //starter class: makes frame and calls panel class
-    JFrame frame; Scanner scan;
+    Scanner scan; JFrame frame;
     public static void main(String[] args){new Jump3();}
     public Jump3(){
         scan = new Scanner(System.in);
         frame = new JFrame("Stick Jump! v0.3");
-        //board ratio: 690 to 460, 690 to 647
-        //1500 to 690
         frame.setSize(1500, 1602);
         frame.setResizable(false);
         Pan pan = new Pan();
@@ -25,37 +26,80 @@ public class Jump3 extends JFrame{ //starter class: makes frame and calls panel 
         frame.setVisible(true);
     }
     class Pan extends JPanel{ //main class: makes main panel and initializes most of the game
-        HelpP helpP; Stats stats; Home home; StoryP storyP; Board board;
-        JPanel playP, display, items, butP, homeP, end;
-        JButton homeB, homeB2, homeB3, playB, storyB, helpB, again;
-        JLabel val, mine;
-        //HelpB helpB;
-        int health, score, maxh;
-        boolean color, first;
+        boolean bcolor, burning, color,  first;
+        int difficulty, health, maxh, score;
+        String username;
+        String[][] lead = new String[10][2];
+        Scanner FReader;
+        Font f1;
+        File leadFile;
+        Image back = new ImageIcon("src/window_background.png").getImage();
+        ImageIcon c21 = new ImageIcon("src/cityback11.png");
+        ImageIcon c22 = new ImageIcon("src/cityback21.png");
+        ImageIcon c23 = new ImageIcon("src/cityback31.png");
         CardLayout cL;
         Timer scoretime;
-        Image back = new ImageIcon("src/window_background.png").getImage();
+        JLabel c1, c2, c3, mine, val;
+        JTextField name;
+        JTextArea nameMessage, settingsMessage;
+        JButton again, helpB, lvl1, lvl2, lvl3, playB, settingsB, storyB;
+        JButton[] homeB;
+        JPanel butP, display, end, esnav, homeP, items, lvlSelect, playP, settings;
+        PrintWriter out;
+        Board board; HelpP helpP; Home home; Stats stats; StoryP storyP; EndScreen es;
         //sets panels and buttons and calls runner
         public Pan(){
             //initialize panels and buttons
-            homeB = new JButton ("Home"); homeB2 = new JButton("Home"); homeB3 = new JButton("Home");
+            homeB = new JButton[5];
+            for(int i = 0; i < 5; i++){
+                homeB[i] = new JButton("Home");
+                homeB[i].setBackground(Color.BLACK);
+                homeB[i].setForeground(Color.WHITE);
+                homeB[i].addActionListener(e -> cL.show(display, "link1"));
+                homeB[i].setFont(new Font("Serif", Font.PLAIN, 80));
+            }
             again = new JButton("Try again?");
             ImageIcon play = new ImageIcon("src/play.png");
             playB = new JButton("Play!", play);
             ImageIcon gear = new ImageIcon("src/gear.png");
-            helpB = new JButton("Help", gear);
+            helpB = new JButton("Help");
             storyB = new JButton(" Story");
+            settingsB = new JButton(gear);
             helpP = new HelpP(); stats = new Stats(); home = new Home();
             storyP = new StoryP();
             display = new JPanel(); playP = new JPanel(); items = new JPanel(); butP = new JPanel(); end = new JPanel(); homeP = new JPanel();
+            settings = new JPanel(); lvlSelect = new JPanel();
             val = new JLabel(new ImageIcon("src/valorant.png"));
             mine = new JLabel(new ImageIcon("src/minecraft2.png"));
             maxh = 100;
             health = maxh; score = 0;
-            first = false;
-            runner();
+            first = bcolor = false;
             Score scorekeep = new Score();
             scoretime = new Timer(1000, scorekeep);
+            leadFile = new File("src/leaderboard.txt");
+            name = new JTextField("Username");
+            username = "User0001";
+            settingsMessage = new JTextArea("Username: "+username);
+            try {out = new PrintWriter("leaderboard.txt");}
+            catch (FileNotFoundException e){
+                System.err.println("Error: file not created");
+                System.exit(1);
+            }
+            try {FReader = new Scanner(leadFile);}
+            catch (FileNotFoundException e){
+                System.err.println("Error: file not found");
+                System.exit(1);
+            }
+            nameMessage = new JTextArea("Enter username below (max 10 characters)");
+            nameMessage.setEditable(false);
+            lvl1 = new JButton();
+            lvl2 = new JButton();
+            lvl3 = new JButton();
+            f1 = new Font("Serif", Font.PLAIN, 50);
+            c1 = new JLabel(c21);
+            c2 = new JLabel(c22);
+            c3 = new JLabel(c23);
+            runner();
         }
         class Score implements ActionListener{
             public void actionPerformed(ActionEvent e){
@@ -75,65 +119,120 @@ public class Jump3 extends JFrame{ //starter class: makes frame and calls panel 
             butP.setBackground(Color.BLACK);
             end.setLayout(new BorderLayout());
             end.setBackground(Color.BLACK);
+            settings.setBackground(Color.WHITE);
             //Button setup
-            homeB.setBackground(Color.BLACK); homeB.setForeground(Color.WHITE);
-            homeB2.setBackground(Color.BLACK); homeB2.setForeground(Color.WHITE);
-            homeB3.setBackground(Color.BLACK); homeB3.setForeground(Color.WHITE);
             again.setBackground(Color.BLACK); again.setForeground(Color.WHITE); color = false;
+            settingsB.setBackground(Color.BLACK);
             Again alistener = new Again();
             Timer atime = new Timer(1000, alistener);
             atime.start();
-            PlayAct pa = new PlayAct();
             playB.setBackground(Color.BLACK); playB.setForeground(Color.WHITE); playB.setFont(new Font("Serif", Font.PLAIN, 80));
             helpB.setBackground(Color.BLACK); helpB.setForeground(Color.WHITE); helpB.setFont(new Font("Serif", Font.PLAIN, 80));
             storyB.setBackground(Color.BLACK); storyB.setForeground(Color.WHITE); storyB.setFont(new Font("Serif", Font.PLAIN, 80));
-            homeB.addActionListener(e -> cL.show(display, "link1"));
-            homeB2.addActionListener(e -> cL.show(display, "link1"));
-            homeB3.addActionListener(e -> cL.show(display, "link1"));
-            again.addActionListener(pa);
-            playB.addActionListener(pa);
+            again.addActionListener(e -> cL.show(display, "link2"));
+            playB.addActionListener(e -> cL.show(display, "link2"));
             helpB.addActionListener(e -> cL.show(display, "link3"));
             storyB.addActionListener(e -> cL.show(display, "link4"));
-            //navigation panel (buttons) setup
+            settingsB.addActionListener(e -> cL.show(display, "link6"));
+            //settings panel setup
+            settings.setLayout(null);
+            name.addActionListener(new Name());
+            settingsMessage.setFont(f1);
+            settingsMessage.setEditable(false);
+            name.setFont(f1);
+            settings.add(settingsMessage);
+            settingsMessage.setBounds(50, 50, 500, 150);
+            settings.add(name);
+            name.setBounds(50, 310, 1000, 100);
+            nameMessage.setFont(f1);
+            nameMessage.setBackground(Color.WHITE);
+            settings.add(nameMessage);
+            nameMessage.setBounds(50, 240, 900, 70);
+            settings.add(homeB[2]);
+            homeB[2].setBounds(0, 1447, 1500, 100);
+            //level select panel setup
+            lvl1.addActionListener(new PlayAct1());
+            lvl2.addActionListener(new PlayAct2());
+            lvl3.addActionListener(new PlayAct3());
+            lvl1.setOpaque(true);
+            lvl2.setOpaque(true);
+            lvl3.setOpaque(true);
+            lvl1.setContentAreaFilled(false);
+            lvl2.setContentAreaFilled(false);
+            lvl3.setContentAreaFilled(false);
+            lvl1.setFont(f1);
+            lvl2.setFont(f1);
+            lvl3.setFont(f1);
+            lvlSelect.setLayout(null);
+            lvlSelect.add(c1);
+            c1.setBounds(50, 25, 1400, 420);
+            lvlSelect.add(c2);
+            c2.setBounds(50, 495, 1400, 420);
+            lvlSelect.add(c3);
+            c3.setBounds(50, 965, 1400, 420);
+            lvlSelect.add(lvl1);
+            lvl1.setBounds(50, 25, 1400, 420);
+            lvlSelect.add(lvl2);
+            lvl2.setBounds(50, 495, 1400, 420);
+            lvlSelect.add(lvl3);
+            lvl3.setBounds(50, 965, 1400, 420);
+            lvlSelect.add(homeB[4]);
+            homeB[4].setBounds(0, 1447, 1500, 100);
+            //nav panel (buttons) setup
             butP.add(helpB);
-            helpB.setBounds(0, 0, 100*100/30,  100);
+            helpB.setBounds(100, 0, 100*100/30-100,  100);
             butP.add(playB);
             playB.setBounds(100*100/30, 0, 110*100/30, 100);
             butP.add(storyB);
             storyB.setBounds(100*100/30+110*100/30, 0, 70*100/30, 100);
+            butP.add(settingsB);
+            settingsB.setBounds(0, 0, 100, 100);
+            //filler
             butP.add(val);
-            val.setBounds(100*100/30+110*100/30+70*100/30, 0, 100, 100);
+            val.setBounds(100*100/30+110*100/30+70*100/30+100-100, 0, 100, 100);
             butP.add(mine);
-            mine.setBounds(100*100/30+110*100/30+70*100/30+100, 0, 100, 100);
+            mine.setBounds(100*100/30+110*100/30+70*100/30+200-100, 0, 100, 100);
             //home panel setup
             homeP.add(butP, BorderLayout.SOUTH);
             homeP.add(home);
             //display panel setup
             display.add(homeP, "link1");
-            display.add(playP, "link2");
+            display.add(lvlSelect, "link2");
             display.add(helpP, "link3");
             display.add(storyP, "link4");
             display.add(end, "link5");
+            display.add(settings, "link6");
+            display.add(playP, "link7");
             //end screen setup
-            JPanel esnav = new JPanel();
-            esnav.setLayout(new GridLayout(1, 2, 0, 0));
+            esnav = new JPanel();
+            esnav.setLayout(null);
             esnav.setPreferredSize(new Dimension(0, 100));
-            homeB3.setFont(new Font("Serif", Font.PLAIN, 80));
             again.setFont(new Font("Serif", Font.BOLD, 80));
-            esnav.add(homeB3);
+            esnav.add(homeB[3]);
+            homeB[3].setBounds(0, 0, 1500/2, 100);
             esnav.add(again);
-            EndScreen es = new EndScreen();
+            again.setBounds(1500/2, 0, 1500/2, 100);
+            es = new EndScreen();
             end.add(esnav, BorderLayout.SOUTH);
             end.add(es);
             //main panel setup
             add(display);
         }
-        class PlayAct implements ActionListener{
+        class Name implements ActionListener{
+            public void actionPerformed(ActionEvent e){
+                if(name.getText().length() <= 10 || name.getText().equals("riptide30125")) {
+                    username = name.getText();
+                    name.setText("");
+                    settingsMessage.setText("Username: "+username);
+                }
+                else name.setText("Too long");
+            }}
+        class PlayAct1 implements ActionListener{
             public void actionPerformed(ActionEvent e){
                 //play panel setup
                 end = new EndScreen();
-                if(first) board.reset();
-                else {board = new Board(); first = true;}
+                if(first) board.reset(0);
+                else {board = new Board(0); first = true;}
                 stats = new Stats();
                 items.setPreferredSize(new Dimension(110*1500/690, 1547));
                 stats.setPreferredSize(new Dimension(123*1500/690, 1547));
@@ -142,14 +241,50 @@ public class Jump3 extends JFrame{ //starter class: makes frame and calls panel 
                 playP.add(board, BorderLayout.CENTER);
                 //reset stats
                 maxh = 100; health = maxh; score = 0;
-                cL.show(display, "link2");
+                cL.show(display, "link7");
         }}
+        class PlayAct2 implements ActionListener{
+            public void actionPerformed(ActionEvent e){
+                //play panel setup
+                if(score >= 50){
+                    end = new EndScreen();
+                    if(first) board.reset(1);
+                    else {board = new Board(1); first = true;}
+                    stats = new Stats();
+                    items.setPreferredSize(new Dimension(110*1500/690, 1547));
+                    stats.setPreferredSize(new Dimension(123*1500/690, 1547));
+                    playP.add(items, BorderLayout.WEST);
+                    playP.add(stats, BorderLayout.EAST);
+                    playP.add(board, BorderLayout.CENTER);
+                    //reset stats
+                    maxh = 100; health = maxh; score = 0;
+                    cL.show(display, "link7");
+            }}}
+        class PlayAct3 implements ActionListener{
+            public void actionPerformed(ActionEvent e){
+                //play panel setup
+                if(score >= 200){
+                    end = new EndScreen();
+                    if(first) board.reset(2);
+                    else {board = new Board(2); first = true;}
+                    stats = new Stats();
+                    items.setPreferredSize(new Dimension(110*1500/690, 1547));
+                    stats.setPreferredSize(new Dimension(123*1500/690, 1547));
+                    playP.add(items, BorderLayout.WEST);
+                    playP.add(stats, BorderLayout.EAST);
+                    playP.add(board, BorderLayout.CENTER);
+                    //reset stats
+                    maxh = 100; health = maxh; score = 0;
+                    cL.show(display, "link7");
+            }}}
         class Again implements ActionListener{
             public void actionPerformed(ActionEvent e){
                 color = !color;
                 if(color) again.setForeground(Color.GREEN);
                 else again.setForeground(Color.WHITE);
+                es.repaint();
             }}
+        class BurnText implements ActionListener{public void actionPerformed(ActionEvent e){bcolor = !bcolor;}}
         class Home extends JPanel{
             public void paintComponent(Graphics g){
                 super.paintComponent(g);
@@ -159,6 +294,12 @@ public class Jump3 extends JFrame{ //starter class: makes frame and calls panel 
                 g.setColor(Color.BLACK);
                 g.drawString("Stick Jump!", 100, 1000);
                 g.drawImage(back, -10*1500/690, -70*1500/690, 800*1500/690, 610*1500/690+300, null);
+                //first portal
+                Image p1 = new ImageIcon("src/portal1.png").getImage();
+                g2.drawImage(p1, 600*1500/690-10, 100*1500/690+100, 100, 152, null);
+                //second portal
+                Image p2 = new ImageIcon("src/portal2.png").getImage();
+                g2.drawImage(p2, 65*1500/690-90, 350*1500/690+100, 100, 152, null);
                 Image pgun = new ImageIcon("src/portal_gun.png").getImage();
                 //Climbing figure
                 g2.drawLine(0, 70*1500/690+100, 28*1500/690, 50*1500/690+100);
@@ -182,9 +323,6 @@ public class Jump3 extends JFrame{ //starter class: makes frame and calls panel 
                 g2.drawLine(65*1500/690, 385*1500/690+100, 60*1500/690, 380*1500/690+100);
                 g2.drawLine(60*1500/690, 380*1500/690+100, 50*1500/690, 390*1500/690+100);
                 g2.drawLine(60*1500/690, 380*1500/690+100, 50*1500/690, 400*1500/690+100);
-                //second portal
-                g2.setColor(Color.decode("#ebab34"));
-                g2.fillRect(65*1500/690, 350*1500/690+100, 5*1500/690, 70*1500/690);
                 Image mc = new ImageIcon("src/minecraft_logo.png").getImage();
                 g2.setColor(Color.BLACK);
                 //portal figure
@@ -199,10 +337,6 @@ public class Jump3 extends JFrame{ //starter class: makes frame and calls panel 
                 g2.drawLine(630*1500/690, 365*1500/690+100, 635*1500/690, 380*1500/690+100);
                 g2.drawLine(630*1500/690, 340*1500/690+100, 635*1500/690, 360*1500/690+100);
                 g2.drawImage(mc, 600*1500/690, 350*1500/690+100, 20*1500/690, 20*1500/690, null);
-                //first portal
-                g2.setColor(Color.decode("#34d2eb"));
-                g2.fillRect(600*1500/690-10, 100*1500/690+100, 5*1500/690, 70*1500/690);
-                g2.setColor(Color.BLACK);
                 //The Chosen One
                 g2.setStroke(new BasicStroke(20));
                 g2.drawOval((690/2-100/2)*1500/690, 50*1500/690+100, 100*1500/690, 100*1500/690);
@@ -221,28 +355,48 @@ public class Jump3 extends JFrame{ //starter class: makes frame and calls panel 
                 g.drawImage(fire, 355*1500/690, 210*1500/690+100, 50*1500/690, 50*1500/690, null);
             }}
         class Stats extends JPanel{
+            BurnText bt = new BurnText();
+            Timer bttime = new Timer(500, bt);
             public void paintComponent(Graphics g) {
                 scoretime.start();
                 super.paintComponent(g);
                 if(score < 0) setBackground(Color.RED);
-                else if(score < 50) setBackground(Color.decode("#28f928"));
-                else if(score < 150) setBackground(Color.decode("#00c8ff"));
-                else setBackground(Color.decode("#8d00cf"));
+                else if(difficulty == 0) setBackground(Color.decode("#28f928"));
+                else if(difficulty == 1) setBackground(Color.decode("#00c8ff"));
+                else if(difficulty == 2)setBackground(Color.decode("#8d00cf"));
+                //health label
+                g.setColor(Color.BLACK);
+                g.setFont(f1);
+                g.drawString("Health", 5, 55);
                 //base healthbar
                 g.setColor(Color.WHITE);
-                g.fillRoundRect(5, 5, 200, 20, 10, 10);
+                g.fillRoundRect(5, 60, 200, 20, 10, 10);
                 //health
                 g.setColor(Color.RED);
-                g.fillRoundRect(5, 5, health*200/maxh, 20, 10, 10);
+                g.fillRoundRect(5, 60, health*200/maxh, 20, 10, 10);
                 g.setColor(Color.BLACK);
-                g.drawRoundRect(5, 5, 200, 20, 10, 10);
-                g.drawRoundRect(5, 5, health*200/maxh, 20, 10, 10);
+                g.drawRoundRect(5, 60, 200, 20, 10, 10);
+                g.drawRoundRect(5, 60, health*200/maxh, 20, 10, 10);
                 //health labeling
                 g.setFont(new Font("Serif", Font.ITALIC, 50));
-                g.drawString(health+" / "+maxh, 5, 80);
+                g.drawString(health+" / "+maxh, 5, 135);
+                //score label
+                g.setFont(f1);
+                g.drawString("Score", 5, 205);
                 //score
                 g.setFont(new Font("Serif", Font.BOLD, 60));
-                g.drawString(score+"", 5, 150);
+                if(difficulty == 0) g.drawString(score+" / 50", 5, 260);
+                else if(difficulty == 1) g.drawString(score+" / 200", 5, 260);
+                else if(difficulty == 2) g.drawString(score+" / 400", 5, 260);
+                //burning text
+                if(burning){
+                    bttime.start();
+                    if(bcolor) g.setColor(Color.RED);
+                    else g.setColor(Color.BLACK);
+                    g.setFont(new Font("Serif", Font.ITALIC, 50));
+                    g.drawString("! BURNING !", 5, 315);
+                }
+                else bttime.stop();
             }}
         class EndScreen extends JPanel{
             int fay = 1;
@@ -257,8 +411,10 @@ public class Jump3 extends JFrame{ //starter class: makes frame and calls panel 
                 g.setFont(new Font("Serif", Font.PLAIN, 100));
                 g.drawString("Your score was", 30, 100);
                 if(score < 0) g.setColor(Color.RED);
-                else if(score < 50) g.setColor(Color.decode("#28f928"));
-                else if(score < 150) g.setColor(Color.decode("#00c8ff"));
+                else if(score <= 50) g.setColor(Color.decode("#28f928"));
+                else if(score <= 200) g.setColor(Color.decode("#00c8ff"));
+                else if(score <= 400) g.setColor(Color.decode("#8d00cf"));
+                else if(color) g.setColor(Color.decode("#947f06"));
                 else g.setColor(Color.decode("#8d00cf"));
                 g.drawString(""+score, 100, 205);
                 //Graphics2D g2 = new (Graphics2D) g;
@@ -276,9 +432,8 @@ public class Jump3 extends JFrame{ //starter class: makes frame and calls panel 
                 setLayout(new BorderLayout());
                 Help help = new Help();
                 add(help);
-                homeB2.setPreferredSize(new Dimension(0, 100));
-                homeB2.setFont(new Font("Serif", Font.PLAIN, 80));
-                add(homeB2, BorderLayout.SOUTH);
+                homeB[1].setPreferredSize(new Dimension(0, 100));
+                add(homeB[1], BorderLayout.SOUTH);
             }}
         class Help extends JPanel{
             boolean cur = true;
@@ -312,9 +467,8 @@ public class Jump3 extends JFrame{ //starter class: makes frame and calls panel 
                 Story story = new Story();
                 story.setPreferredSize(new Dimension(690, 300));
                 add(story);
-                homeB.setPreferredSize(new Dimension(0, 100));
-                homeB.setFont(new Font("Serif", Font.PLAIN, 80));
-                add(homeB, BorderLayout.SOUTH);
+                homeB[0].setPreferredSize(new Dimension(0, 100));
+                add(homeB[0], BorderLayout.SOUTH);
             }
             class Story extends JPanel{
                 public void paintComponent(Graphics g){
@@ -344,17 +498,20 @@ public class Jump3 extends JFrame{ //starter class: makes frame and calls panel 
                 }}}
         //Actual game
         class Board extends JPanel implements KeyListener{
-            int px, py, pxforce, pyforce, tlength;
+            int px, py, pxforce, pyforce, tlength, burnMaxTime, curBurnTime;
             double speedmultiplier;
             boolean wpress, apress, dpressed, wallowpress, onGround, loseHealth, godmode;
-            PlatMover platmove; PlayerMover pmove; TurretMover turmove; ProjectileMover projmove; ProjSpawner pspawn;
-            Timer ptime, platime, turtime, projtime, pstime;
-            Image city, city2, city3, blood;
+            PlatMover platmove; PlayerMover pmove; TurretMover turmove; ProjectileMover projmove; ProjSpawner pspawn; BurnApp burn;
+            Timer ptime, platime, turtime, projtime, pstime, btime;
+            Image blood, fireball;
+            Image city = new ImageIcon("src/cityback2.png").getImage();
+            Image city2 = new ImageIcon("src/cityback.png").getImage();
+            Image city3 = new ImageIcon("src/cityback3.png").getImage();
             Platform[] plats = new Platform[20]; PowerUp[] pows = new PowerUp[20]; Turret[] turr = new Turret[39];
             ArrayList<Projectile> projectile = new ArrayList();
             Graphics2D g2;
-            public Board(){
-                reset();
+            public Board(int diff){
+                reset(diff);
                 addKeyListener(this);
                 platmove = new PlatMover();
                 platime = new Timer(3, platmove);
@@ -371,14 +528,16 @@ public class Jump3 extends JFrame{ //starter class: makes frame and calls panel 
                 pspawn = new ProjSpawner();
                 pstime = new Timer(2000, pspawn);
                 pstime.start();
+                burn = new BurnApp();
+                btime = new Timer(1000, burn);
                 godmode = false;
                 tlength = 40;
-                city = new ImageIcon("src/cityback2.png").getImage();
-                city2 = new ImageIcon("src/cityback.png").getImage();
-                city3 = new ImageIcon("src/cityback3.png").getImage();
                 blood = new ImageIcon("src/blood.png").getImage();
+                fireball = new ImageIcon("src/fireball.png").getImage();
             }
-            public void reset(){
+            public void reset(int difficult){
+                difficulty = difficult;
+                burning = false;
                 speedmultiplier = 0.5;
                 px = 995/2; py = 50;
                 pxforce = 0; pyforce = 0;
@@ -393,9 +552,9 @@ public class Jump3 extends JFrame{ //starter class: makes frame and calls panel 
             }
             public void paintComponent(Graphics g){
                 super.paintComponent(g);
-                if(score < 50) g.drawImage(city, 0, 0, 995, 1547, null);
-                else if(score < 150) g.drawImage(city2, 0, 0, 995, 1547, null);
-                else g.drawImage(city3, 0, 0, 995, 1547, null);
+                if(difficulty == 0) g.drawImage(city, 0, 0, 995, 1547, null);
+                else if(difficulty == 1) g.drawImage(city2, 0, 0, 995, 1547, null);
+                else if(difficulty == 2) g.drawImage(city3, 0, 0, 995, 1547, null);
                 g2 = (Graphics2D) g;
                 g2.setColor(Color.BLACK);
                 g2.setStroke(new BasicStroke(5));
@@ -423,6 +582,12 @@ public class Jump3 extends JFrame{ //starter class: makes frame and calls panel 
                     if(projectile.get(i).type==0||projectile.get(i).type==3||projectile.get(i).type==4||projectile.get(i).type==5){
                         g.setColor(Color.BLACK);
                         g.fillOval(projectile.get(i).x - 20, projectile.get(i).y - 20, 40, 40);
+                    }
+                    else g.drawImage(fireball, projectile.get(i).x-20, projectile.get(i).y-20, 40, 40, null);
+                }
+                for(int i = 0; i < 20; i++){ //rendering power ups
+                    if(pows[i].inplay){
+                        if(pows[i].type == 0) ;
                     }}}
             class ProjSpawner implements ActionListener{
                 public void actionPerformed(ActionEvent e){
@@ -474,14 +639,22 @@ public class Jump3 extends JFrame{ //starter class: makes frame and calls panel 
                     grabFocus();
                 }}
             class PowerMover implements ActionListener{
-                public void actionPerformed(ActionEvent e){
-                    for(int i = 0; i < projectile.size(); i++){
-                        projectile.get(i).x += projectile.get(i).changex*speedmultiplier;
-                        projectile.get(i).y += projectile.get(i).changey*speedmultiplier;
-                    }}}
+                public void actionPerformed(ActionEvent e) {
+                    for(int i = 0; i < 20; i++){
+                        if(pows[i].inplay){
+                            pows[i].y += 2*speedmultiplier;
+                            if(pows[i].y > 1527) pows[i] = new PowerUp();
+                            repaint();
+                            grabFocus();
+                        }
+                        else {
+                            if((int)(Math.random()*100000+1)==1){
+                                turr[i].inplay = true;
+                                turr[i].y = plats[20].y+10;
+                                turr[i].x = plats[20].x;
+                        }}}}}
             class TurretMover implements ActionListener{
                 public void actionPerformed(ActionEvent e){
-                    int type;
                     for(int i = 0; i < 39; i++){
                         if(turr[i].inplay){
                             turr[i].y += 2*speedmultiplier;
@@ -489,13 +662,32 @@ public class Jump3 extends JFrame{ //starter class: makes frame and calls panel 
                             repaint();
                             grabFocus();
                         }
-                        else turr[i].inplay = (int)(Math.random()*10000+1)==1;
+                        else if(difficulty == 0) turr[i].inplay = (int)(Math.random()*20000+1)==1;
+                        else if(difficulty == 1) turr[i].inplay = (int)(Math.random()*18000+1)==1;
+                        else if(difficulty == 2) turr[i].inplay = (int)(Math.random()*10000+1)==1;
                     }}}
             class ProjectileMover implements ActionListener{
                 public void actionPerformed(ActionEvent e){
                     for(int i = 0; i < projectile.size(); i++){
                         projectile.get(i).x += projectile.get(i).changex*speedmultiplier;
                         projectile.get(i).y += projectile.get(i).changey*speedmultiplier;
+                        if(projectile.get(i).x < 20 || projectile.get(i).x > 975) projectile.remove(i);
+                        else if(projectile.get(i).y < 20 || projectile.get(i).y > 1527) projectile.remove(i);
+                        else if(projectile.get(i).x-20 < px+21 && projectile.get(i).x+20 > px-21 && projectile.get(i).y+20 > py-130 && projectile.get(i).y-20 < py) {
+                            healthLoss(projectile.get(i).hreduct);
+                            if(projectile.get(i).burner) {burning = true; burnMaxTime = projectile.get(i).btime; btime.start();}
+                            projectile.remove(i);
+                        }}}}
+            class BurnApp implements ActionListener{
+                public void actionPerformed(ActionEvent e){
+                    if(curBurnTime == burnMaxTime) {
+                        btime.stop();
+                        curBurnTime = 0;
+                        burning = false;
+                    }
+                    else {
+                        curBurnTime++;
+                        health--;
                     }}}
             class Platform{
                 int x, y;
@@ -507,12 +699,10 @@ public class Jump3 extends JFrame{ //starter class: makes frame and calls panel 
                 int x, y, type;
                 boolean inplay;
                 public PowerUp(){
-                    /* 0 = extra points; 1 = health regen (+10); 2 = extra health; 3 = health regen (max) */
-                    type = (int)(Math.random()*10);
+                    type = (int)(Math.random()*4);
                     x = -50; y = -50;
                     inplay = false;
-                }
-            }
+                }}
             class Turret{
                 int x, y, type, shoot, x3, y3;
                 boolean inplay;
@@ -521,18 +711,41 @@ public class Jump3 extends JFrame{ //starter class: makes frame and calls panel 
                     if((int)(Math.random()*2)==0) x = -20;
                     else x = 975;
                     y = -50;
-                    type = 0; //(int)(Math.random()*5);
+                    int ran;
+                    if(difficulty == 0) type = 0;
+                    else if(difficulty == 1){
+                        ran = (int)(Math.random()*3+1);
+                        if(ran == 1) type = 0;
+                        else if(ran == 2) type = 1;
+                        else type = 3;
+                    }
+                    else if(difficulty == 2){
+                        ran = (int)(Math.random()*5+1);
+                        if(ran == 1) type = 0;
+                        else if(ran == 2) type = 1;
+                        else if(ran == 3) type = 3;
+                        else if(ran == 4) type = 4;
+                        else if(ran == 5) type = 2;
+                    }
                     inplay = false;
-                }
-            }
+                }}
             class Projectile{
-                int type, x, y, changex, changey;
+                int type, x, y, changex, changey, hreduct, btime;
+                boolean burner;
                 public Projectile(int tp, int tx, int ty, int x3, int y3){
-                    x = tx+x3; y = ty+y3;
+                    x = tx+x3+20; y = ty+y3+20;
                     changex = x3; changey = y3;
                     type = tp;
+                    hreduct = 5;
+                    burner = false; btime = 0;
+                }
+                public Projectile(int tp, int tx, int ty, int x3, int y3, int burntime){
+                    x = tx+x3+20; y = ty+y3+20;
+                    changex = x3; changey = y3;
+                    type = tp;
+                    hreduct = 10;
+                    burner = true; btime = burntime;
                 }}
-            public void coord_change(int new_x, int new_y){px = new_x;py = 1547-new_y;}
             public void keyTyped(KeyEvent e) {
                 if(e.getKeyChar() == '/'){
                     String command = scan.next();
@@ -542,7 +755,10 @@ public class Jump3 extends JFrame{ //starter class: makes frame and calls panel 
                     if(command.equals("stop_score")) scoretime.stop();
                     if(command.equals("start_score")) scoretime.start();
                     if(command.equals("kill")) health = 0;
-                }}
+                    if(command.equals("heal")) health = 1000;
+                }
+                else if(e.getKeyChar() == 'h') health += 10;
+            }
             public void keyPressed(KeyEvent e){
                 if(e.getKeyChar() == 'a') apress = true;
                 if(e.getKeyChar() == 'd') dpressed = true;

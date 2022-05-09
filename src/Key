@@ -1,16 +1,32 @@
+Orginization rules
+main, Constructors, classes, methods
+least complicated to most complicated
+alphabetical
+
 Turrets
     0 - cannon
         shoots a cannonball that detonates upon impact, whether wall, player, or platform
-        5 damage on impact
+        type 0 projectile
     1 - fireball
         shoots a fireball that can go through one platform, then detonates upon impact, whether wall, player, or platform, dealing AOE damage
-        10 damage on impact + burning for 5 seconds
+        type 1 projectile
     2 - laser
         charges up for half a second to "shoot" an instantly traveling laser
         20 damage
     3 - supercannon
         shoots a cannonball that detonates upon impact, only connecting with the player and walls
-        5 damage on impact
+        type 2 projectile
     4 - triple shot
         shoots 3 cannonballs that detonate upon impact, whether wall, player, or platform
-        5 damage on impact
+        type 1 projectile
+Projectiles
+    0 - normal
+Power ups
+    0 - point gamble
+        +20 points or sets score to 0
+    1 - health regen
+        +20 health
+    2 - extra max health
+        +10 maxh with no effect or sets health to 10
+    3 - health regen
+        full health
