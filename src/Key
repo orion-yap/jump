@@ -23,7 +23,7 @@ Projectiles
     0 - normal
 Power ups
     0 - point gamble
-        +20 points or sets score to 0
+        +40 points or sets score to 0
     1 - health regen
         +20 health
     2 - extra max health
